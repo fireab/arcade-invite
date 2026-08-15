@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Batch Third Flash Ceremony</title>
+    <!-- Google Fonts for Retro Arcade Look -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+  </head>
+  <body>
+    <div id="game-container">
+      <canvas id="gameCanvas"></canvas>
+      
+      <!-- Screens (Overlays) -->
+      
+      <!-- Start Screen -->
+      <div id="start-screen" class="screen active">
+        <h1>BATCH 3<br><span class="neon-text">FLASH CEREMONY</span></h1>
+        <p>Aviation Training Journey</p>
+        <button id="btn-start" class="arcade-btn">CLICK TO START</button>
+        <div class="instructions">Use ARROW KEYS, A/D or DRAG to move left/right. Catch the objects!</div>
+      </div>
+
+      <!-- HUD (Heads Up Display) -->
+      <div id="hud" class="screen">
+        <div class="hud-top">
+          <div id="stage-display" style="width:100%; text-align:center;">CURRENT: GROUND CLASS</div>
+        </div>
+        <div class="progress-bar-container">
+          <div id="progress-bar"></div>
+        </div>
+      </div>
+
+      <!-- Game Over Screen -->
+      <div id="game-over-screen" class="screen">
+        <h1 class="red-neon">GAME OVER</h1>
+        <p id="final-stage">MISSED: Ground Class</p>
+        <p>TRY AGAIN PILOT!</p>
+        <button id="btn-restart" class="arcade-btn">RESTART GAME</button>
+      </div>
+
+      <!-- Victory / Invitation Screen -->
+      <div id="victory-screen" class="screen">
+        <div class="invitation-card">
+          <h1 class="gold-text">MISSION ACCOMPLISHED</h1>
+          <h2>You are invited to the</h2>
+          <h1 class="ceremony-title">Third Flash Ceremony</h1>
+          
+          <div class="invite-details">
+            <p><strong>Batch:</strong> MPL 63</p>
+            <p><strong>Date:</strong> [Date Placeholder]</p>
+            <p><strong>Time:</strong> [Time Placeholder]</p>
+            <p><strong>Venue:</strong> [Venue Placeholder]</p>
+          </div>
+          
+          <p class="invite-msg">Join us in celebrating this milestone achievement!</p>
+          <div class="rsvp">RSVP: [Contact Information]</div>
+        </div>
+      </div>
+    </div>
+    
+    <script type="module" src="./game.js"></script>
+  </body>
+</html>

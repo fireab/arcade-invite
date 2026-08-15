@@ -1,0 +1,246 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body, html {
+  width: 100%;
+  height: 100%;
+  background-color: #050510;
+  color: #fff;
+  font-family: 'Press Start 2P', cursive;
+  overflow: hidden; /* Prevent scrolling */
+  user-select: none;
+}
+
+#game-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* UI Screens */
+.screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  pointer-events: none; /* Let clicks pass through if not active */
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  z-index: 10;
+}
+
+.screen.active {
+  opacity: 1;
+  pointer-events: auto; /* Enable clicks */
+}
+
+/* Start Screen */
+#start-screen {
+  background: rgba(5, 5, 16, 0.85);
+}
+
+#start-screen h1 {
+  font-size: 2.5rem;
+  line-height: 1.5;
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 0px #ff00ff, -2px -2px 0px #00ffff;
+}
+
+.neon-text {
+  color: #0ff;
+  text-shadow: 0 0 10px #0ff, 0 0 20px #0ff, 0 0 40px #0ff;
+}
+
+#start-screen p {
+  color: #ff0;
+  margin-bottom: 40px;
+  font-size: 1.2rem;
+}
+
+.instructions {
+  margin-top: 40px;
+  font-size: 0.8rem;
+  color: #aaa;
+  line-height: 1.6;
+}
+
+.arcade-btn {
+  font-family: 'Press Start 2P', cursive;
+  background-color: transparent;
+  color: #fff;
+  border: 4px solid #fff;
+  padding: 15px 30px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  box-shadow: 4px 4px 0px #fff;
+}
+
+.arcade-btn:hover {
+  background-color: #fff;
+  color: #000;
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px #fff;
+}
+
+.arcade-btn:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0px 0px 0px #fff;
+}
+
+/* HUD */
+#hud {
+  justify-content: flex-start;
+  background: transparent;
+  padding: 20px;
+}
+
+.hud-top {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1000px;
+  font-size: 1rem;
+  text-shadow: 2px 2px 0 #000;
+  color: #0ff;
+}
+
+.progress-bar-container {
+  width: 100%;
+  max-width: 1000px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.2);
+  margin-top: 15px;
+  border-radius: 5px;
+  overflow: hidden;
+  border: 2px solid #fff;
+}
+
+#progress-bar {
+  width: 0%;
+  height: 100%;
+  background: #0f0;
+  transition: width 0.3s;
+  box-shadow: 0 0 10px #0f0;
+}
+
+/* Game Over */
+#game-over-screen {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.red-neon {
+  color: #f00;
+  text-shadow: 0 0 10px #f00, 0 0 20px #f00, 0 0 40px #f00;
+  font-size: 3rem;
+  margin-bottom: 30px;
+}
+
+#game-over-screen p {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+  color: #fff;
+}
+
+/* Victory / Invitation */
+#victory-screen {
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+}
+
+.invitation-card {
+  background: linear-gradient(135deg, rgba(20,20,40,0.9) 0%, rgba(10,10,20,0.95) 100%);
+  border: 2px solid #ffd700;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.5), inset 0 0 20px rgba(255, 215, 0, 0.2);
+  padding: 40px;
+  border-radius: 15px;
+  max-width: 600px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.gold-text {
+  color: #ffd700;
+  font-size: 1.5rem;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+}
+
+.ceremony-title {
+  color: #fff;
+  font-size: 2rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin: 10px 0;
+  border-bottom: 2px solid #ffd700;
+  padding-bottom: 15px;
+}
+
+.invite-details {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  text-align: left;
+  margin: 20px 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #ddd;
+}
+
+.invite-details strong {
+  color: #0ff;
+  display: inline-block;
+  width: 100px;
+}
+
+.invite-msg {
+  color: #ff0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.rsvp {
+  margin-top: 20px;
+  font-size: 0.8rem;
+  color: #aaa;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  padding-top: 20px;
+}
+
+/* Media Queries for Mobile */
+@media (max-width: 768px) {
+  #start-screen h1 { font-size: 1.5rem; }
+  .hud-top { font-size: 0.7rem; }
+  .invitation-card { padding: 20px; }
+  .ceremony-title { font-size: 1.2rem; }
+  .gold-text { font-size: 1rem; }
+  .invite-details { font-size: 0.7rem; }
+  .arcade-btn { padding: 10px 20px; font-size: 1rem; }
+}
