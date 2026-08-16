@@ -11,11 +11,11 @@ let currentStageIndex = 0;
 
 const stages = [
     { name: 'Ground Class', imgSrc: './book.png', imgObj: null },
-    { name: 'Stage 1', imgSrc: './da40.jpeg', imgObj: null },
-    { name: 'Stage 2', imgSrc: './da40.jpeg', imgObj: null },
-    { name: 'Stage 3', imgSrc: './da40.jpeg', imgObj: null },
-    { name: 'Stage 4', imgSrc: './da40.jpeg', imgObj: null },
-    { name: 'Stage 5', imgSrc: './da42.jpeg', imgObj: null }
+    { name: 'Stage 1', imgSrc: './da40.png', imgObj: null },
+    { name: 'Stage 2', imgSrc: './da40.png', imgObj: null },
+    { name: 'Stage 3', imgSrc: './da40.png', imgObj: null },
+    { name: 'Stage 4', imgSrc: './da40.png', imgObj: null },
+    { name: 'Stage 5', imgSrc: './da42.png', imgObj: null }
 ];
 
 let player = { x: 400, y: 500, width: 80, height: 80, speed: PLAYER_SPEED, imgObj: null };
@@ -72,7 +72,7 @@ function loadImages() {
     });
     // Player starts as da40
     const pImg = new Image();
-    pImg.src = './da40.jpeg';
+    pImg.src = './da40.png';
     player.imgObj = pImg;
 }
 
