@@ -121,154 +121,86 @@ function resizeCanvas() {
     canvas.height = window.innerHeight;
     player.x = canvas.width / 2;
     player.y = canvas.height - 100;
-    createMapCanvas();
 }
 
-// ── Mini-Map HUD (bottom-left) ──
-const MINIMAP_W = 160;
-const MINIMAP_H = 180;
-const MINIMAP_PAD = 15;
-
-// Ethiopia outline (normalized 0-1)
-const ethOutline = [
-    [0.05,0.25],[0.12,0.12],[0.22,0.00],[0.32,0.03],[0.42,0.07],
-    [0.52,0.09],[0.60,0.17],[0.68,0.30],[0.82,0.42],[1.00,0.58],
-    [0.92,0.73],[0.75,0.80],[0.60,0.79],[0.45,0.74],[0.33,0.76],
-    [0.20,0.68],[0.12,0.55],[0.06,0.40]
-];
-
-const miniCities = [
-    {n:'ADD',x:0.38,y:0.50,cap:true},
-    {n:'HWS',x:0.37,y:0.62},{n:'DIR',x:0.58,y:0.40},
-    {n:'BAH',x:0.28,y:0.23},{n:'GON',x:0.24,y:0.16}
-];
-
-function createMapCanvas() {
-    // Static map layer (cached)
-    mapCanvas = document.createElement('canvas');
-    mapCanvas.width = MINIMAP_W;
-    mapCanvas.height = MINIMAP_H;
-    const m = mapCanvas.getContext('2d');
-
-    // Background panel
-    m.fillStyle = 'rgba(0,20,12,0.7)';
-    m.strokeStyle = 'rgba(0,230,118,0.3)';
-    m.lineWidth = 1.5;
-    m.beginPath();
-    m.roundRect(0, 0, MINIMAP_W, MINIMAP_H, 8);
-    m.fill(); m.stroke();
-
-    // Inner border
-    m.strokeStyle = 'rgba(212,175,55,0.15)';
-    m.lineWidth = 0.5;
-    m.beginPath();
-    m.roundRect(3, 3, MINIMAP_W-6, MINIMAP_H-6, 6);
-    m.stroke();
-
-    // Map area within the panel
-    const mX = 10, mY = 22, mW = MINIMAP_W - 20, mH = MINIMAP_H - 40;
-
-    // Grid
-    m.strokeStyle = 'rgba(0,107,63,0.12)';
-    m.lineWidth = 0.3;
-    for (let i = 0; i <= 6; i++) {
-        m.beginPath(); m.moveTo(mX, mY+i/6*mH); m.lineTo(mX+mW, mY+i/6*mH); m.stroke();
-        m.beginPath(); m.moveTo(mX+i/6*mW, mY); m.lineTo(mX+i/6*mW, mY+mH); m.stroke();
-    }
-
-    // Country fill
-    const pts = ethOutline.map(([x,y]) => ({ x: mX+x*mW, y: mY+y*mH }));
-    m.beginPath(); m.moveTo(pts[0].x, pts[0].y);
-    pts.forEach(p => m.lineTo(p.x, p.y)); m.closePath();
-    m.fillStyle = 'rgba(0,107,63,0.15)'; m.fill();
-
-    // Country border
-    m.setLineDash([3,2]); m.strokeStyle = 'rgba(0,230,118,0.35)'; m.lineWidth = 1;
-    m.beginPath(); m.moveTo(pts[0].x, pts[0].y);
-    pts.forEach(p => m.lineTo(p.x, p.y)); m.closePath(); m.stroke();
-    m.setLineDash([]);
-
-    // Ras Dashen mountain
-    const rX = mX+0.35*mW, rY = mY+0.12*mH;
-    m.fillStyle = 'rgba(212,175,55,0.3)';
-    m.beginPath(); m.moveTo(rX-4, rY+4); m.lineTo(rX, rY-4); m.lineTo(rX+4, rY+4); m.closePath(); m.fill();
-
-    // Cities
-    miniCities.forEach(c => {
-        const cx = mX+c.x*mW, cy = mY+c.y*mH;
-        if (c.cap) {
-            m.fillStyle = 'rgba(212,175,55,0.5)';
-            m.beginPath(); m.arc(cx,cy,2.5,0,Math.PI*2); m.fill();
-        } else {
-            m.fillStyle = 'rgba(0,230,118,0.3)';
-            m.beginPath(); m.arc(cx,cy,1.5,0,Math.PI*2); m.fill();
-        }
-        m.fillStyle = c.cap ? 'rgba(212,175,55,0.5)' : 'rgba(0,230,118,0.25)';
-        m.font = '4px "Press Start 2P"'; m.textAlign='center';
-        m.fillText(c.n, cx, cy-5);
-    });
-
-    // Title bar
-    m.fillStyle = 'rgba(0,230,118,0.4)';
-    m.font = '5px "Press Start 2P"'; m.textAlign = 'center';
-    m.fillText('ETHIOPIA', MINIMAP_W/2, 14);
-
-    // ET flag stripe at very top
-    const stripeY = 4, stripeH = 2;
-    m.fillStyle = '#006B3F'; m.fillRect(8, stripeY, (MINIMAP_W-16)/3, stripeH);
-    m.fillStyle = '#D4AF37'; m.fillRect(8+(MINIMAP_W-16)/3, stripeY, (MINIMAP_W-16)/3, stripeH);
-    m.fillStyle = '#E31937'; m.fillRect(8+2*(MINIMAP_W-16)/3, stripeY, (MINIMAP_W-16)/3, stripeH);
+// ── Radar HUD (bottom-left) ──
+function getRadarSize() {
+    // Smaller on mobile
+    return canvas.width < 500 ? 45 : 55;
 }
 
-// Draw live mini-map with blip tracking the falling item
-function drawMiniMap() {
-    if (!mapCanvas) return;
+function drawRadar() {
+    const R = getRadarSize();
+    const pad = canvas.width < 500 ? 10 : 15;
+    const cx = pad + R + 5;
+    const cy = canvas.height - pad - R - 5;
 
-    const mx = MINIMAP_PAD;
-    const my = canvas.height - MINIMAP_H - MINIMAP_PAD;
+    // Radar background
+    ctx.fillStyle = 'rgba(0,20,12,0.6)';
+    ctx.beginPath(); ctx.arc(cx, cy, R + 4, 0, Math.PI * 2); ctx.fill();
 
-    // Draw cached static map
-    ctx.globalAlpha = 0.85;
-    ctx.drawImage(mapCanvas, mx, my);
-    ctx.globalAlpha = 1;
+    // Outer ring
+    ctx.strokeStyle = 'rgba(0,230,118,0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
 
-    // Map content area within mini-map
-    const mX = mx + 10, mY = my + 22, mW = MINIMAP_W - 20, mH = MINIMAP_H - 40;
+    // Inner ring
+    ctx.strokeStyle = 'rgba(0,230,118,0.15)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.arc(cx, cy, R * 0.5, 0, Math.PI * 2); ctx.stroke();
 
-    // Live blip for active coin (map screen position → map position)
+    // Crosshair lines
+    ctx.strokeStyle = 'rgba(0,230,118,0.12)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(cx - R, cy); ctx.lineTo(cx + R, cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy - R); ctx.lineTo(cx, cy + R); ctx.stroke();
+
+    // Sweep line (rotating)
+    const sweepAngle = (Date.now() * 0.002) % (Math.PI * 2);
+    ctx.strokeStyle = 'rgba(0,230,118,0.35)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(sweepAngle) * R, cy + Math.sin(sweepAngle) * R);
+    ctx.stroke();
+
+    // Sweep fade trail
+    ctx.fillStyle = 'rgba(0,230,118,0.04)';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, R, sweepAngle - 0.5, sweepAngle);
+    ctx.closePath();
+    ctx.fill();
+
+    // Item blip
     if (activeCoin && gameState === 'PLAYING') {
-        // Map coin's screen X to Ethiopia map X, coin Y to map Y
-        const blipX = mX + (activeCoin.x / canvas.width) * mW;
-        const blipY = mY + (activeCoin.y / canvas.height) * mH;
+        const bx = cx + ((activeCoin.x / canvas.width) - 0.5) * 2 * R * 0.85;
+        const by = cy + ((activeCoin.y / canvas.height) - 0.5) * 2 * R * 0.85;
         const pulse = Math.sin(Date.now() * 0.008) * 0.3 + 0.7;
 
-        // Blip glow
-        ctx.fillStyle = `rgba(227,25,55,${0.15 * pulse})`;
-        ctx.beginPath(); ctx.arc(blipX, blipY, 8, 0, Math.PI*2); ctx.fill();
-
-        // Blip dot
-        ctx.fillStyle = `rgba(227,25,55,${0.8 * pulse})`;
-        ctx.beginPath(); ctx.arc(blipX, blipY, 3, 0, Math.PI*2); ctx.fill();
-
-        // Blip ring
-        ctx.strokeStyle = `rgba(227,25,55,${0.4 * pulse})`;
-        ctx.lineWidth = 0.8;
-        ctx.beginPath(); ctx.arc(blipX, blipY, 5 + Math.sin(Date.now()*0.005)*2, 0, Math.PI*2); ctx.stroke();
+        // Glow
+        ctx.fillStyle = `rgba(227,25,55,${0.12 * pulse})`;
+        ctx.beginPath(); ctx.arc(bx, by, 6, 0, Math.PI * 2); ctx.fill();
+        // Dot
+        ctx.fillStyle = `rgba(227,25,55,${0.9 * pulse})`;
+        ctx.beginPath(); ctx.arc(bx, by, 2.5, 0, Math.PI * 2); ctx.fill();
     }
 
     // Player blip
     if (gameState === 'PLAYING') {
-        const pBlipX = mX + (player.x / canvas.width) * mW;
-        const pBlipY = mY + mH - 5;
-        ctx.fillStyle = 'rgba(0,230,118,0.7)';
-        ctx.beginPath(); ctx.arc(pBlipX, pBlipY, 2, 0, Math.PI*2); ctx.fill();
+        const px = cx + ((player.x / canvas.width) - 0.5) * 2 * R * 0.85;
+        const py = cy + R * 0.75;
+        ctx.fillStyle = 'rgba(0,230,118,0.8)';
+        ctx.beginPath(); ctx.arc(px, py, 2, 0, Math.PI * 2); ctx.fill();
     }
 
-    // Stage label at bottom of mini-map
+    // Stage label
     if (gameState === 'PLAYING' && stages[currentStageIndex]) {
+        const fontSize = canvas.width < 500 ? 4 : 5;
         ctx.fillStyle = 'rgba(212,175,55,0.6)';
-        ctx.font = '5px "Press Start 2P"'; ctx.textAlign = 'center';
-        ctx.fillText(stages[currentStageIndex].name.toUpperCase(), mx + MINIMAP_W/2, my + MINIMAP_H - 8);
+        ctx.font = `${fontSize}px "Press Start 2P"`;
+        ctx.textAlign = 'center';
+        ctx.fillText(stages[currentStageIndex].name.toUpperCase(), cx, cy + R + 14);
     }
 }
 
@@ -469,9 +401,9 @@ function draw() {
     });
     ctx.globalAlpha = 1;
 
-    // Mini-map HUD overlay
+    // Radar HUD overlay
     if (gameState === 'PLAYING') {
-        drawMiniMap();
+        drawRadar();
     }
 }
 
