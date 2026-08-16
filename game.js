@@ -87,6 +87,7 @@ function init() {
 
     document.getElementById('btn-start').addEventListener('click', startGame);
     document.getElementById('btn-restart').addEventListener('click', startGame);
+    document.getElementById('btn-screenshot').addEventListener('click', takeScreenshot);
 
     window.addEventListener('keydown', (e) => {
         if (keys.hasOwnProperty(e.key)) keys[e.key] = true;
@@ -164,8 +165,11 @@ function gameOver() {
 function victory() {
     gameState = 'VICTORY';
     document.getElementById('victory-screen').classList.add('active');
+    // Ethiopian flag colored fireworks: green, gold, red
+    const etColors = ['#006B3F', '#D4AF37', '#E31937', '#00e676'];
     setInterval(() => {
-        spawnExplosion(Math.random() * canvas.width, Math.random() * canvas.height, '#ffd700');
+        const color = etColors[Math.floor(Math.random() * etColors.length)];
+        spawnExplosion(Math.random() * canvas.width, Math.random() * canvas.height, color);
     }, 500);
 }
 
@@ -238,14 +242,14 @@ function update() {
             Math.abs(activeCoin.y - player.y) < (activeCoin.height + player.height)/2.5) {
             
             playSound('eat');
-            spawnExplosion(activeCoin.x, activeCoin.y, '#0ff');
+            spawnExplosion(activeCoin.x, activeCoin.y, '#00e676');
             
             currentStageIndex++;
             
             // Check for player upgrade after Stage 4
             if (currentStageIndex === 5) { // Index 5 is Stage 5 (da42)
-                player.imgObj = stages[5].imgObj; // da42.jpeg
-                spawnExplosion(player.x, player.y, '#f0f'); // Upgrade effect
+                player.imgObj = stages[5].imgObj; // da42
+                spawnExplosion(player.x, player.y, '#D4AF37'); // Upgrade effect — ET gold
             }
             
             activeCoin = null;
@@ -281,8 +285,8 @@ function draw() {
             ctx.drawImage(player.imgObj, -player.width/2, -player.height/2, player.width, player.height);
             ctx.restore();
         } else {
-            // Fallback rectangle
-            ctx.fillStyle = '#0ff';
+            // Fallback rectangle — ET green
+            ctx.fillStyle = '#006B3F';
             ctx.fillRect(player.x - player.width/2, player.y - player.height/2, player.width, player.height);
         }
 
@@ -294,13 +298,13 @@ function draw() {
                 ctx.drawImage(activeCoin.stage.imgObj, -activeCoin.width/2, -activeCoin.height/2, activeCoin.width, activeCoin.height);
                 
                 // Draw Label below the coin
-                ctx.fillStyle = '#ff0';
+                ctx.fillStyle = '#D4AF37';
                 ctx.font = '10px "Press Start 2P"';
                 ctx.textAlign = 'center';
                 ctx.fillText(activeCoin.stage.name, 0, activeCoin.height/2 + 15);
                 ctx.restore();
             } else {
-                ctx.fillStyle = '#ff0';
+                ctx.fillStyle = '#D4AF37';
                 ctx.fillRect(activeCoin.x - activeCoin.width/2, activeCoin.y - activeCoin.height/2, activeCoin.width, activeCoin.height);
             }
         }
@@ -320,6 +324,51 @@ function gameLoop() {
     update();
     draw();
     requestAnimationFrame(gameLoop);
+}
+
+function takeScreenshot() {
+    const card = document.querySelector('.invitation-card');
+    const btn = document.getElementById('btn-screenshot');
+    
+    // Temporarily hide the button so it doesn't appear in the screenshot
+    btn.style.display = 'none';
+    
+    // Pause the float animation for a clean capture
+    card.style.animation = 'none';
+    card.style.transform = 'translateY(0)';
+    
+    html2canvas(card, {
+        backgroundColor: '#020d08',
+        scale: 2, // Higher resolution
+        useCORS: true,
+        logging: false
+    }).then(screenshotCanvas => {
+        // Restore button and animation
+        btn.style.display = '';
+        card.style.animation = '';
+        card.style.transform = '';
+        
+        // Create download link
+        const link = document.createElement('a');
+        link.download = 'batch3-flash-ceremony-invitation.png';
+        link.href = screenshotCanvas.toDataURL('image/png');
+        link.click();
+        
+        // Visual feedback
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '✅ SAVED!';
+        btn.classList.add('screenshot-success');
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.classList.remove('screenshot-success');
+        }, 2000);
+    }).catch(err => {
+        // Restore button on error
+        btn.style.display = '';
+        card.style.animation = '';
+        card.style.transform = '';
+        console.error('Screenshot failed:', err);
+    });
 }
 
 window.onload = init;

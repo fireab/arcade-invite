@@ -7,7 +7,7 @@
 body, html {
   width: 100%;
   height: 100%;
-  background-color: #050510;
+  background-color: #020d08;
   color: #fff;
   font-family: 'Press Start 2P', cursive;
   overflow: hidden; /* Prevent scrolling */
@@ -54,23 +54,32 @@ canvas {
 
 /* Start Screen */
 #start-screen {
-  background: rgba(5, 5, 16, 0.85);
+  background: rgba(2, 13, 8, 0.9);
 }
 
 #start-screen h1 {
   font-size: 2.5rem;
   line-height: 1.5;
   margin-bottom: 20px;
-  text-shadow: 2px 2px 0px #ff00ff, -2px -2px 0px #00ffff;
+  text-shadow: 2px 2px 0px #006B3F, -2px -2px 0px #D4AF37;
+}
+
+/* ET Brand subtitle */
+.et-brand {
+  color: #D4AF37;
+  font-size: 0.8rem;
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+  text-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
 }
 
 .neon-text {
-  color: #0ff;
-  text-shadow: 0 0 10px #0ff, 0 0 20px #0ff, 0 0 40px #0ff;
+  color: #00e676;
+  text-shadow: 0 0 10px #00e676, 0 0 20px #006B3F, 0 0 40px #006B3F;
 }
 
 #start-screen p {
-  color: #ff0;
+  color: #D4AF37;
   margin-bottom: 40px;
   font-size: 1.2rem;
 }
@@ -78,33 +87,33 @@ canvas {
 .instructions {
   margin-top: 40px;
   font-size: 0.8rem;
-  color: #aaa;
+  color: #6b9;
   line-height: 1.6;
 }
 
 .arcade-btn {
   font-family: 'Press Start 2P', cursive;
   background-color: transparent;
-  color: #fff;
-  border: 4px solid #fff;
+  color: #00e676;
+  border: 4px solid #006B3F;
   padding: 15px 30px;
   font-size: 1.2rem;
   cursor: pointer;
   text-transform: uppercase;
   transition: all 0.2s;
-  box-shadow: 4px 4px 0px #fff;
+  box-shadow: 4px 4px 0px #006B3F;
 }
 
 .arcade-btn:hover {
-  background-color: #fff;
-  color: #000;
+  background-color: #006B3F;
+  color: #fff;
   transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0px #fff;
+  box-shadow: 2px 2px 0px #006B3F;
 }
 
 .arcade-btn:active {
   transform: translate(4px, 4px);
-  box-shadow: 0px 0px 0px #fff;
+  box-shadow: 0px 0px 0px #006B3F;
 }
 
 /* HUD */
@@ -121,26 +130,26 @@ canvas {
   max-width: 1000px;
   font-size: 1rem;
   text-shadow: 2px 2px 0 #000;
-  color: #0ff;
+  color: #00e676;
 }
 
 .progress-bar-container {
   width: 100%;
   max-width: 1000px;
   height: 10px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
   margin-top: 15px;
   border-radius: 5px;
   overflow: hidden;
-  border: 2px solid #fff;
+  border: 2px solid #006B3F;
 }
 
 #progress-bar {
   width: 0%;
   height: 100%;
-  background: #0f0;
+  background: linear-gradient(90deg, #006B3F, #00e676);
   transition: width 0.3s;
-  box-shadow: 0 0 10px #0f0;
+  box-shadow: 0 0 10px #00e676;
 }
 
 /* Game Over */
@@ -149,8 +158,8 @@ canvas {
 }
 
 .red-neon {
-  color: #f00;
-  text-shadow: 0 0 10px #f00, 0 0 20px #f00, 0 0 40px #f00;
+  color: #E31937;
+  text-shadow: 0 0 10px #E31937, 0 0 20px #E31937, 0 0 40px #E31937;
   font-size: 3rem;
   margin-bottom: 30px;
 }
@@ -163,14 +172,14 @@ canvas {
 
 /* Victory / Invitation */
 #victory-screen {
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(2, 13, 8, 0.8);
   backdrop-filter: blur(5px);
 }
 
 .invitation-card {
-  background: linear-gradient(135deg, rgba(20,20,40,0.9) 0%, rgba(10,10,20,0.95) 100%);
-  border: 2px solid #ffd700;
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.5), inset 0 0 20px rgba(255, 215, 0, 0.2);
+  background: linear-gradient(135deg, rgba(0, 40, 24, 0.95) 0%, rgba(2, 13, 8, 0.98) 100%);
+  border: 2px solid #D4AF37;
+  box-shadow: 0 0 25px rgba(212, 175, 55, 0.4), inset 0 0 25px rgba(0, 107, 63, 0.15);
   padding: 40px;
   border-radius: 15px;
   max-width: 600px;
@@ -181,6 +190,16 @@ canvas {
   animation: float 3s ease-in-out infinite;
 }
 
+/* ET stripe accent at top of card */
+.invitation-card::before {
+  content: '';
+  display: block;
+  height: 4px;
+  background: linear-gradient(90deg, #006B3F 33%, #D4AF37 33%, #D4AF37 66%, #E31937 66%);
+  border-radius: 2px;
+  margin-bottom: 10px;
+}
+
 @keyframes float {
   0% { transform: translateY(0px); }
   50% { transform: translateY(-10px); }
@@ -188,9 +207,9 @@ canvas {
 }
 
 .gold-text {
-  color: #ffd700;
+  color: #D4AF37;
   font-size: 1.5rem;
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.7);
 }
 
 .ceremony-title {
@@ -199,7 +218,7 @@ canvas {
   text-transform: uppercase;
   letter-spacing: 2px;
   margin: 10px 0;
-  border-bottom: 2px solid #ffd700;
+  border-bottom: 2px solid #D4AF37;
   padding-bottom: 15px;
 }
 
@@ -215,13 +234,13 @@ canvas {
 }
 
 .invite-details strong {
-  color: #0ff;
+  color: #00e676;
   display: inline-block;
   width: 100px;
 }
 
 .invite-msg {
-  color: #ff0;
+  color: #D4AF37;
   font-size: 0.9rem;
   line-height: 1.5;
 }
@@ -229,9 +248,46 @@ canvas {
 .rsvp {
   margin-top: 20px;
   font-size: 0.8rem;
-  color: #aaa;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  color: #6b9;
+  border-top: 1px solid rgba(212, 175, 55, 0.3);
   padding-top: 20px;
+}
+
+
+/* Screenshot Button */
+.screenshot-btn {
+  margin-top: 15px;
+  border-color: #D4AF37;
+  color: #D4AF37;
+  box-shadow: 4px 4px 0px #D4AF37;
+  font-size: 0.9rem;
+  padding: 12px 24px;
+  transition: all 0.2s ease;
+}
+
+.screenshot-btn:hover {
+  background-color: #D4AF37;
+  color: #020d08;
+  box-shadow: 2px 2px 0px #D4AF37;
+  text-shadow: none;
+}
+
+.screenshot-btn:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0px 0px 0px #D4AF37;
+}
+
+.screenshot-success {
+  border-color: #00e676 !important;
+  color: #00e676 !important;
+  box-shadow: 0 0 15px rgba(0, 230, 118, 0.5) !important;
+  animation: successPulse 0.5s ease;
+}
+
+@keyframes successPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
 }
 
 /* Media Queries for Mobile */
@@ -243,4 +299,5 @@ canvas {
   .gold-text { font-size: 1rem; }
   .invite-details { font-size: 0.7rem; }
   .arcade-btn { padding: 10px 20px; font-size: 1rem; }
+  .screenshot-btn { font-size: 0.7rem; padding: 10px 16px; }
 }
