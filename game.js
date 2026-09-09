@@ -28,8 +28,9 @@ let player = {
 };
 let activeCoin = null; // The falling item
 let particles = [];
-let stars = [];
-let mapCanvas = null; // Cached Ethiopia map background
+let bgImg = new Image();
+bgImg.src = "./mountains.jpg";
+let bgY = 0;
 
 // Input
 const keys = { ArrowLeft: false, ArrowRight: false, a: false, d: false };
@@ -144,14 +145,7 @@ function init() {
     isMouseDown = false;
   });
 
-  for (let i = 0; i < 100; i++) {
-    stars.push({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      size: Math.random() * 2 + 1,
-      speed: Math.random() * 3 + 1,
-    });
-  }
+
 
   requestAnimationFrame(gameLoop);
 }
@@ -354,14 +348,14 @@ function spawnExplosion(x, y, color = "#ff0") {
 function update() {
   if (gameState !== "PLAYING") return;
 
-  // Background Stars
-  stars.forEach((star) => {
-    star.y += star.speed;
-    if (star.y > canvas.height) {
-      star.y = 0;
-      star.x = Math.random() * canvas.width;
+  // Scroll Background
+  bgY += 1.5;
+  if (bgImg && bgImg.complete) {
+    const H = bgImg.height * (canvas.width / bgImg.width);
+    if (bgY >= H * 2) {
+      bgY -= H * 2;
     }
-  });
+  }
 
   // Player Movement (Left/Right only)
   if (keys.ArrowLeft || keys.a) player.x -= player.speed;
@@ -424,12 +418,34 @@ function update() {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  ctx.fillStyle = "#fff";
-  stars.forEach((star) => {
-    ctx.globalAlpha = Math.random() * 0.5 + 0.5;
-    ctx.fillRect(star.x, star.y, star.size, star.size);
-  });
-  ctx.globalAlpha = 1;
+  if (bgImg && bgImg.complete) {
+    const W = canvas.width;
+    const H = bgImg.height * (W / bgImg.width);
+    
+    // Draw seamless 2H blocks. bgY goes from 0 to 2H.
+    // We need to draw the block starting at bgY - 2H, and the block starting at bgY.
+    const drawSeamlessBlock = (startY) => {
+      // Normal image (top half of the block)
+      ctx.drawImage(bgImg, 0, startY, W, H);
+      
+      // Flipped image (bottom half of the block)
+      ctx.save();
+      ctx.translate(0, startY + 2 * H);
+      ctx.scale(1, -1);
+      ctx.drawImage(bgImg, 0, 0, W, H);
+      ctx.restore();
+    };
+
+    drawSeamlessBlock(bgY - 2 * H);
+    drawSeamlessBlock(bgY);
+    
+    // Add a dark overlay to make UI and game elements pop
+    ctx.fillStyle = "rgba(2, 13, 8, 0.3)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  } else {
+    ctx.fillStyle = "#020d08";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
 
   if (gameState === "PLAYING" || gameState === "GAMEOVER") {
     // Draw Player
