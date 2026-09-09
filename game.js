@@ -27,10 +27,18 @@ let player = {
   imgObj: null,
 };
 let activeCoin = null; // The falling item
+let runway = null; // The final landing challenge
 let particles = [];
 let bgImg = new Image();
 bgImg.src = "./mountains.jpg";
+let runwayImg = new Image();
+runwayImg.src = "./runway_bg.jpg";
 let bgY = 0;
+let scrollSpeed = 1.5;
+let bgFade = 0; // 0 = Mountains, 1 = Runway
+let isTransitioningBg = false;
+let isLandingPhase = false;
+let landingTimer = 0;
 
 // Input
 const keys = { ArrowLeft: false, ArrowRight: false, a: false, d: false };
@@ -218,22 +226,34 @@ function drawRadar() {
   ctx.closePath();
   ctx.fill();
 
-  // Item blip
-  if (activeCoin && gameState === "PLAYING") {
-    const bx = cx + (activeCoin.x / canvas.width - 0.5) * 2 * R * 0.85;
-    const by = cy + (activeCoin.y / canvas.height - 0.5) * 2 * R * 0.85;
-    const pulse = Math.sin(Date.now() * 0.008) * 0.3 + 0.7;
+  // Item or Runway blip
+  if (gameState === "PLAYING") {
+    let target = null;
+    let color = "";
+    if (activeCoin) {
+      target = activeCoin;
+      color = "rgba(227,25,55,";
+    } else if (isLandingPhase) {
+      target = { x: canvas.width / 2, y: canvas.height - (canvas.height/2 + landingTimer) };
+      color = "rgba(50,150,255,";
+    }
 
-    // Glow
-    ctx.fillStyle = `rgba(227,25,55,${0.12 * pulse})`;
-    ctx.beginPath();
-    ctx.arc(bx, by, 6, 0, Math.PI * 2);
-    ctx.fill();
-    // Dot
-    ctx.fillStyle = `rgba(227,25,55,${0.9 * pulse})`;
-    ctx.beginPath();
-    ctx.arc(bx, by, 2.5, 0, Math.PI * 2);
-    ctx.fill();
+    if (target) {
+      const bx = cx + (target.x / canvas.width - 0.5) * 2 * R * 0.85;
+      const by = cy + (target.y / canvas.height - 0.5) * 2 * R * 0.85;
+      const pulse = Math.sin(Date.now() * 0.008) * 0.3 + 0.7;
+
+      // Glow
+      ctx.fillStyle = `${color}${0.12 * pulse})`;
+      ctx.beginPath();
+      ctx.arc(bx, by, 6, 0, Math.PI * 2);
+      ctx.fill();
+      // Dot
+      ctx.fillStyle = `${color}${0.9 * pulse})`;
+      ctx.beginPath();
+      ctx.arc(bx, by, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
   // Player   blip
@@ -247,7 +267,7 @@ function drawRadar() {
   }
 
   // Stage label
-  if (gameState === "PLAYING" && stages[currentStageIndex]) {
+  if ((gameState === "PLAYING" || gameState === "LANDING_ROLL" || gameState === "LANDED") && stages[currentStageIndex]) {
     const fontSize = canvas.width < 500 ? 4 : 5;
     ctx.fillStyle = "rgba(212,175,55,0.6)";
     ctx.font = `${fontSize}px "Press Start 2P"`;
@@ -265,6 +285,11 @@ function startGame() {
   initAudio();
   gameState = "PLAYING";
   currentStageIndex = 0;
+  scrollSpeed = 1.5;
+  bgFade = 0;
+  isTransitioningBg = false;
+  isLandingPhase = false;
+  landingTimer = 0;
 
   player.x = canvas.width / 2;
   player.y = canvas.height - 100;
@@ -272,6 +297,7 @@ function startGame() {
   player.imgObj = stages[1].imgObj; // da40.jpeg
 
   particles = [];
+  runway = null;
   spawnCoin();
 
   document.getElementById("start-screen").classList.remove("active");
@@ -282,12 +308,15 @@ function startGame() {
 }
 
 function updateHUD() {
-  let stageName = stages[currentStageIndex]
-    ? stages[currentStageIndex].name
-    : "COMPLETED";
+  let stageName = "LANDING PHASE";
+  if (currentStageIndex < 6) {
+    stageName = stages[currentStageIndex].name;
+  } else {
+    stageName = stages[5].name + " (LANDING)";
+  }
   document.getElementById("stage-display").innerText = `CURRENT: ${stageName}`;
 
-  const progressPercent = (currentStageIndex / stages.length) * 100;
+  const progressPercent = Math.min((currentStageIndex / 6) * 100, 100);
   document.getElementById("progress-bar").style.width = `${progressPercent}%`;
 }
 
@@ -315,8 +344,10 @@ function victory() {
 }
 
 function spawnCoin() {
-  if (currentStageIndex >= stages.length) {
-    victory();
+  if (currentStageIndex >= 6) {
+    activeCoin = null;
+    isLandingPhase = true;
+    updateHUD();
     return;
   }
 
@@ -346,33 +377,55 @@ function spawnExplosion(x, y, color = "#ff0") {
 }
 
 function update() {
-  if (gameState !== "PLAYING") return;
+  if (gameState !== "PLAYING" && gameState !== "LANDING_ROLL") return;
 
-  // Scroll Background
-  bgY += 1.5;
-  if (bgImg && bgImg.complete) {
-    const H = bgImg.height * (canvas.width / bgImg.width);
-    if (bgY >= H * 2) {
-      bgY -= H * 2;
+  // Background Transition Logic
+  if (isTransitioningBg) {
+    bgFade += 0.02; // Fade takes about ~1 second (50 frames)
+    if (bgFade >= 1) {
+      bgFade = 1;
+      isTransitioningBg = false;
+      // Now that we are purely on the runway, spawn Stage 5!
+      spawnCoin();
     }
   }
 
-  // Player Movement (Left/Right only)
-  if (keys.ArrowLeft || keys.a) player.x -= player.speed;
-  if (keys.ArrowRight || keys.d) player.x += player.speed;
-
-  if (isMouseDown) {
-    const dx = mousePos.x - player.x;
-    player.x += dx * 0.1;
+  // Landing logic
+  if (isLandingPhase && gameState === "PLAYING") {
+    landingTimer++;
+    if (landingTimer > 150) { // ~2.5s after collecting Stage 5
+      if (Math.abs(player.x - canvas.width / 2) < 150) {
+        gameState = "LANDING_ROLL";
+      } else {
+        gameOver();
+        document.getElementById("final-stage").innerText = "CRASHED: Missed Runway!";
+      }
+    }
   }
 
-  player.x = Math.max(
-    player.width / 2,
-    Math.min(canvas.width - player.width / 2, player.x),
-  );
+  // Scroll Background
+  if (gameState === "PLAYING" || gameState === "LANDING_ROLL") {
+    bgY += scrollSpeed;
+  }
+
+  // Player Movement (Left/Right only)
+  if (gameState === "PLAYING") {
+    if (keys.ArrowLeft || keys.a) player.x -= player.speed;
+    if (keys.ArrowRight || keys.d) player.x += player.speed;
+
+    if (isMouseDown) {
+      const dx = mousePos.x - player.x;
+      player.x += dx * 0.1;
+    }
+
+    player.x = Math.max(
+      player.width / 2,
+      Math.min(canvas.width - player.width / 2, player.x),
+    );
+  }
 
   // Active Coin logic
-  if (activeCoin) {
+  if (gameState === "PLAYING" && activeCoin) {
     activeCoin.y += activeCoin.speed;
 
     // If coin falls off the bottom
@@ -393,15 +446,33 @@ function update() {
 
       currentStageIndex++;
 
-      // Check for player upgrade after Stage 4
+      // When Stage 4 is collected (making index 5), trigger the terrain transition
       if (currentStageIndex === 5) {
-        // Index 5 is Stage 5 (da42)
-        player.imgObj = stages[5].imgObj; // da42
-        spawnExplosion(player.x, player.y, "#D4AF37"); // Upgrade effect — ET gold
+        isTransitioningBg = true;
+        activeCoin = null; // Wait for transition to finish before spawning Stage 5
+      } else {
+        // Check for player upgrade after Stage 5
+        if (currentStageIndex === 6) {
+          // Index 5 is Stage 5 (da42)
+          player.imgObj = stages[5].imgObj; // da42
+          spawnExplosion(player.x, player.y, "#D4AF37"); // Upgrade effect — ET gold
+        }
+        
+        activeCoin = null;
+        setTimeout(spawnCoin, 1000); // 1 second delay before next coin
       }
+    }
+  }
 
-      activeCoin = null;
-      setTimeout(spawnCoin, 1000); // 1 second delay before next coin
+  if (gameState === "LANDING_ROLL") {
+    scrollSpeed -= 0.02;
+    player.x += (canvas.width / 2 - player.x) * 0.05;
+    player.y -= 1; // Move up a bit for realism
+
+    if (scrollSpeed <= 0) {
+      scrollSpeed = 0;
+      gameState = "LANDED"; // plane stopped
+      setTimeout(victory, 800); 
     }
   }
 
@@ -418,36 +489,41 @@ function update() {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  if (bgImg && bgImg.complete) {
+  const drawSeamlessBlock = (img, startY, alpha) => {
+    if (!img || !img.complete) return;
+    ctx.globalAlpha = alpha;
     const W = canvas.width;
-    const H = bgImg.height * (W / bgImg.width);
+    const H = img.height * (W / img.width);
     
-    // Draw seamless 2H blocks. bgY goes from 0 to 2H.
-    // We need to draw the block starting at bgY - 2H, and the block starting at bgY.
-    const drawSeamlessBlock = (startY) => {
-      // Normal image (top half of the block)
-      ctx.drawImage(bgImg, 0, startY, W, H);
-      
-      // Flipped image (bottom half of the block)
-      ctx.save();
-      ctx.translate(0, startY + 2 * H);
-      ctx.scale(1, -1);
-      ctx.drawImage(bgImg, 0, 0, W, H);
-      ctx.restore();
-    };
+    ctx.drawImage(img, 0, startY, W, H);
+    ctx.save();
+    ctx.translate(0, startY + 2 * H);
+    ctx.scale(1, -1);
+    ctx.drawImage(img, 0, 0, W, H);
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  };
 
-    drawSeamlessBlock(bgY - 2 * H);
-    drawSeamlessBlock(bgY);
-    
-    // Add a dark overlay to make UI and game elements pop
-    ctx.fillStyle = "rgba(2, 13, 8, 0.3)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  } else {
-    ctx.fillStyle = "#020d08";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Mountains Background
+  if (bgImg && bgImg.complete && bgFade < 1) {
+    const H = bgImg.height * (canvas.width / bgImg.width);
+    let myY = bgY % (H * 2);
+    drawSeamlessBlock(bgImg, myY - 2 * H, 1 - bgFade);
+    drawSeamlessBlock(bgImg, myY, 1 - bgFade);
   }
 
-  if (gameState === "PLAYING" || gameState === "GAMEOVER") {
+  // Runway Background
+  if (runwayImg && runwayImg.complete && bgFade > 0) {
+    const H = runwayImg.height * (canvas.width / runwayImg.width);
+    let myY = bgY % (H * 2);
+    drawSeamlessBlock(runwayImg, myY - 2 * H, bgFade);
+    drawSeamlessBlock(runwayImg, myY, bgFade);
+  }
+
+  ctx.fillStyle = "rgba(2, 13, 8, 0.3)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  if (gameState === "PLAYING" || gameState === "GAMEOVER" || gameState === "LANDING_ROLL" || gameState === "LANDED") {
     // Draw Player
     if (player.imgObj && player.imgObj.complete) {
       ctx.save();
@@ -512,7 +588,7 @@ function draw() {
   ctx.globalAlpha = 1;
 
   // Radar HUD overlay
-  if (gameState === "PLAYING") {
+  if (gameState === "PLAYING" || gameState === "LANDING_ROLL" || gameState === "LANDED") {
     drawRadar();
   }
 }
