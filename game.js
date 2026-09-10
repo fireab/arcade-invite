@@ -91,20 +91,51 @@ function playSound(type) {
 }
 
 // Load images
-let boeingCanvas = document.createElement('canvas');
-let isBoeingLoaded = false;
-const stageAltitudes = [80, 100, 125, 155, 190, 230];
+let planeSprites = {
+  da40: { canvas: document.createElement('canvas'), loaded: false, src: "./da40.jpg" },
+  da42: { canvas: document.createElement('canvas'), loaded: false, src: "./da42.jpg" },
+  boeing: { canvas: document.createElement('canvas'), loaded: false, src: "./plane.jpg" }
+};
+
 const stageScrollSpeeds = [1.5, 1.5, 1.5, 1.5, 1.5, 1.5];
 const stageCoinSpeeds = [3.0, 3.5, 4.0, 4.5, 5.0, 5.5];
 
+function getPlayerSpriteForStage(stageIndex) {
+  if (stageIndex >= 6) return planeSprites.boeing; // Landing
+  if (stageIndex === 5) return planeSprites.da42;  // Stage 5
+  return planeSprites.da40;                        // Ground, 1, 2, 3, 4
+}
+
 function updateStageDynamics(stageIndex) {
-  let idx = Math.min(stageIndex, stageAltitudes.length - 1);
-  player.width = stageAltitudes[idx];
-  player.height = stageAltitudes[idx];
+  player.width = 120;
+  player.height = 120;
   
+  let idx = Math.min(stageIndex, stageScrollSpeeds.length - 1);
   if (gameState !== "LANDING_ROLL" && gameState !== "LANDED") {
     scrollSpeed = stageScrollSpeeds[idx];
   }
+}
+
+function processChromaKey(img, canvasObj) {
+  canvasObj.canvas.width = img.width;
+  canvasObj.canvas.height = img.height;
+  const ctx = canvasObj.canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0);
+  const imgData = ctx.getImageData(0, 0, img.width, img.height);
+  const data = imgData.data;
+  
+  for (let i = 0; i < data.length; i += 4) {
+    let r = data[i], g = data[i+1], b = data[i+2];
+    let diff = g - Math.max(r, b);
+    if (diff > 50) {
+      data[i+3] = 0; // Transparent
+    } else if (diff > 10) {
+      data[i+3] = Math.max(0, 255 - (diff - 10) * 6); // Anti-alias edge
+      data[i+1] = Math.max(r, b); // Desaturate green spill
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+  canvasObj.loaded = true;
 }
 
 function loadImages() {
@@ -114,30 +145,12 @@ function loadImages() {
     stage.imgObj = img;
   });
   
-  const pImg = new Image();
-  pImg.src = "./plane.jpg";
-  pImg.onload = () => {
-    boeingCanvas.width = pImg.width;
-    boeingCanvas.height = pImg.height;
-    const pCtx = boeingCanvas.getContext("2d");
-    pCtx.drawImage(pImg, 0, 0);
-    const imgData = pCtx.getImageData(0, 0, pImg.width, pImg.height);
-    const data = imgData.data;
-    
-    for (let i = 0; i < data.length; i += 4) {
-      let r = data[i], g = data[i+1], b = data[i+2];
-      let diff = g - Math.max(r, b);
-      if (diff > 50) {
-        data[i+3] = 0; // Transparent
-      } else if (diff > 10) {
-        data[i+3] = Math.max(0, 255 - (diff - 10) * 6); // Anti-alias edge
-        data[i+1] = Math.max(r, b); // Desaturate green spill
-      }
-    }
-    pCtx.putImageData(imgData, 0, 0);
-    isBoeingLoaded = true;
-    player.imgObj = boeingCanvas;
-  };
+  Object.keys(planeSprites).forEach(key => {
+    const obj = planeSprites[key];
+    const img = new Image();
+    img.src = obj.src;
+    img.onload = () => processChromaKey(img, obj);
+  });
 }
 
 function init() {
@@ -334,7 +347,6 @@ function startGame() {
   player.x = canvas.width / 2;
   player.y = canvas.height - 100;
   updateStageDynamics(currentStageIndex);
-  if (isBoeingLoaded) player.imgObj = boeingCanvas;
 
   particles = [];
   runway = null;
@@ -596,6 +608,9 @@ function draw() {
 
   if (gameState === "PLAYING" || gameState === "GAMEOVER" || gameState === "LANDING_ROLL" || gameState === "LANDED") {
     // Draw Player
+    let currentSprite = getPlayerSpriteForStage(currentStageIndex);
+    player.imgObj = currentSprite.loaded ? currentSprite.canvas : null;
+
     if (player.imgObj) {
       ctx.save();
       
