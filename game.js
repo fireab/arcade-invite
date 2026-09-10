@@ -93,12 +93,18 @@ function playSound(type) {
 // Load images
 let boeingCanvas = document.createElement('canvas');
 let isBoeingLoaded = false;
-const playerSizes = [80, 100, 125, 155, 190, 230];
+const stageAltitudes = [80, 100, 125, 155, 190, 230];
+const stageScrollSpeeds = [1.5, 1.5, 1.5, 1.5, 1.5, 1.5];
+const stageCoinSpeeds = [3.0, 3.5, 4.0, 4.5, 5.0, 5.5];
 
-function updatePlayerSize(stageIndex) {
-  let idx = Math.min(stageIndex, playerSizes.length - 1);
-  player.width = playerSizes[idx];
-  player.height = playerSizes[idx];
+function updateStageDynamics(stageIndex) {
+  let idx = Math.min(stageIndex, stageAltitudes.length - 1);
+  player.width = stageAltitudes[idx];
+  player.height = stageAltitudes[idx];
+  
+  if (gameState !== "LANDING_ROLL" && gameState !== "LANDED") {
+    scrollSpeed = stageScrollSpeeds[idx];
+  }
 }
 
 function loadImages() {
@@ -319,7 +325,6 @@ function startGame() {
   initAudio();
   gameState = "PLAYING";
   currentStageIndex = 0;
-  scrollSpeed = 1.5;
   bgFade = 0;
   isTransitioningBg = false;
   runwayScrollY = 0;
@@ -328,7 +333,7 @@ function startGame() {
 
   player.x = canvas.width / 2;
   player.y = canvas.height - 100;
-  updatePlayerSize(currentStageIndex);
+  updateStageDynamics(currentStageIndex);
   if (isBoeingLoaded) player.imgObj = boeingCanvas;
 
   particles = [];
@@ -398,7 +403,7 @@ function spawnCoin() {
     y: -100,
     width: 60,
     height: 60,
-    speed: COIN_SPEED + currentStageIndex * 0.5,
+    speed: stageCoinSpeeds[Math.min(currentStageIndex, stageCoinSpeeds.length - 1)],
     stage: stageInfo,
   };
   updateHUD();
@@ -489,7 +494,7 @@ function update() {
       spawnExplosion(activeCoin.x, activeCoin.y, "#00e676");
 
       currentStageIndex++;
-      updatePlayerSize(currentStageIndex);
+      updateStageDynamics(currentStageIndex);
 
       // When Stage 4 is collected (making index 5), trigger the terrain transition
       if (currentStageIndex === 5) {
