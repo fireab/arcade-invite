@@ -13,6 +13,8 @@ body, html {
   font-family: 'Press Start 2P', cursive;
   overflow: hidden; /* Prevent scrolling */
   user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 #game-container {

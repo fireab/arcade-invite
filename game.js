@@ -37,6 +37,7 @@ let bgY = 0;
 let scrollSpeed = 1.5;
 let bgFade = 0; // 0 = Mountains, 1 = Runway
 let isTransitioningBg = false;
+let runwayScrollY = 0;
 let isLandingPhase = false;
 let landingTimer = 0;
 
@@ -137,6 +138,7 @@ function init() {
   canvas.addEventListener(
     "touchstart",
     (e) => {
+      e.preventDefault();
       isMouseDown = true;
       updateMousePos(e.touches[0]);
     },
@@ -145,6 +147,7 @@ function init() {
   canvas.addEventListener(
     "touchmove",
     (e) => {
+      e.preventDefault();
       if (isMouseDown) updateMousePos(e.touches[0]);
     },
     { passive: false },
@@ -288,6 +291,7 @@ function startGame() {
   scrollSpeed = 1.5;
   bgFade = 0;
   isTransitioningBg = false;
+  runwayScrollY = 0;
   isLandingPhase = false;
   landingTimer = 0;
 
@@ -412,6 +416,9 @@ function update() {
   // Scroll Background
   if (gameState === "PLAYING" || gameState === "LANDING_ROLL") {
     bgY += scrollSpeed;
+    if (bgFade > 0 || isTransitioningBg) {
+      runwayScrollY += scrollSpeed;
+    }
   }
 
   // Player Movement (Left/Right only)
@@ -495,35 +502,58 @@ function update() {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const drawSeamlessBlock = (img, startY, alpha) => {
+  const drawSeamlessBlock = (img, startY, alpha, scale) => {
     if (!img || !img.complete) return;
     ctx.globalAlpha = alpha;
-    const W = canvas.width;
-    const H = img.height * (W / img.width);
     
-    ctx.drawImage(img, 0, startY, W, H);
+    const W = img.width * scale;
+    const H = img.height * scale;
+    const offsetX = (canvas.width - W) / 2; // Keep runway perfectly centered
+    
+    ctx.drawImage(img, offsetX, startY, W, H);
     ctx.save();
     ctx.translate(0, startY + 2 * H);
     ctx.scale(1, -1);
-    ctx.drawImage(img, 0, 0, W, H);
+    ctx.drawImage(img, offsetX, 0, W, H);
     ctx.restore();
     ctx.globalAlpha = 1;
   };
 
-  // Mountains Background
+  const getScale = (img) => Math.max(canvas.width / img.width, canvas.height / img.height);
+
+  // Mountains Background (Seamless Loop)
   if (bgImg && bgImg.complete && bgFade < 1) {
-    const H = bgImg.height * (canvas.width / bgImg.width);
+    const scale = getScale(bgImg);
+    const H = bgImg.height * scale;
     let myY = bgY % (H * 2);
-    drawSeamlessBlock(bgImg, myY - 2 * H, 1 - bgFade);
-    drawSeamlessBlock(bgImg, myY, 1 - bgFade);
+    drawSeamlessBlock(bgImg, myY - 2 * H, 1 - bgFade, scale);
+    drawSeamlessBlock(bgImg, myY, 1 - bgFade, scale);
   }
 
-  // Runway Background
+  // Runway Background (Single Image, Never Duplicated)
   if (runwayImg && runwayImg.complete && bgFade > 0) {
-    const H = runwayImg.height * (canvas.width / runwayImg.width);
-    let myY = bgY % (H * 2);
-    drawSeamlessBlock(runwayImg, myY - 2 * H, bgFade);
-    drawSeamlessBlock(runwayImg, myY, bgFade);
+    // Ensure the runway image is at least 2000px taller than the screen so it can scroll deeply
+    const scale = Math.max(canvas.width / runwayImg.width, (canvas.height + 2000) / runwayImg.height);
+    const H = runwayImg.height * scale;
+    const W = runwayImg.width * scale;
+    const offsetX = (canvas.width - W) / 2; // Center horizontally
+    
+    ctx.globalAlpha = bgFade;
+    
+    // To ensure the plane lands on the exact same physical spot on the runway regardless of screen size,
+    // we calculate a scroll multiplier based on the image scale. 
+    // 260 original image pixels from the bottom is our target landing spot (based on the mobile layout).
+    let scrollMultiplier = (260 * scale - 100) / 300;
+    if (scrollMultiplier < 1) scrollMultiplier = 1; // Fallback to preserve the mobile standard
+    
+    let offsetScroll = runwayScrollY * scrollMultiplier;
+    
+    // Start drawing so the BOTTOM of the runway image aligns with the bottom of the screen,
+    // and let it scroll down organically.
+    const drawY = canvas.height - H + offsetScroll;
+    ctx.drawImage(runwayImg, offsetX, drawY, W, H);
+    
+    ctx.globalAlpha = 1;
   }
 
   ctx.fillStyle = "rgba(2, 13, 8, 0.3)";
