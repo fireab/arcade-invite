@@ -352,8 +352,14 @@ function spawnCoin() {
   }
 
   const stageInfo = stages[currentStageIndex];
+  
+  // Center Stage 5 perfectly with the runway
+  const spawnX = (currentStageIndex === 5) 
+    ? canvas.width / 2 
+    : Math.random() * (canvas.width - 100) + 50;
+
   activeCoin = {
-    x: Math.random() * (canvas.width - 100) + 50,
+    x: spawnX,
     y: -100,
     width: 60,
     height: 60,
