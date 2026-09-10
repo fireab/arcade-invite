@@ -91,16 +91,47 @@ function playSound(type) {
 }
 
 // Load images
+let boeingCanvas = document.createElement('canvas');
+let isBoeingLoaded = false;
+const playerSizes = [80, 100, 125, 155, 190, 230];
+
+function updatePlayerSize(stageIndex) {
+  let idx = Math.min(stageIndex, playerSizes.length - 1);
+  player.width = playerSizes[idx];
+  player.height = playerSizes[idx];
+}
+
 function loadImages() {
   stages.forEach((stage) => {
     const img = new Image();
     img.src = stage.imgSrc;
     stage.imgObj = img;
   });
-  // Player starts as da40
+  
   const pImg = new Image();
-  pImg.src = "./da40.png";
-  player.imgObj = pImg;
+  pImg.src = "./plane.jpg";
+  pImg.onload = () => {
+    boeingCanvas.width = pImg.width;
+    boeingCanvas.height = pImg.height;
+    const pCtx = boeingCanvas.getContext("2d");
+    pCtx.drawImage(pImg, 0, 0);
+    const imgData = pCtx.getImageData(0, 0, pImg.width, pImg.height);
+    const data = imgData.data;
+    
+    for (let i = 0; i < data.length; i += 4) {
+      let r = data[i], g = data[i+1], b = data[i+2];
+      let diff = g - Math.max(r, b);
+      if (diff > 50) {
+        data[i+3] = 0; // Transparent
+      } else if (diff > 10) {
+        data[i+3] = Math.max(0, 255 - (diff - 10) * 6); // Anti-alias edge
+        data[i+1] = Math.max(r, b); // Desaturate green spill
+      }
+    }
+    pCtx.putImageData(imgData, 0, 0);
+    isBoeingLoaded = true;
+    player.imgObj = boeingCanvas;
+  };
 }
 
 function init() {
@@ -297,8 +328,8 @@ function startGame() {
 
   player.x = canvas.width / 2;
   player.y = canvas.height - 100;
-  // reset player image to da40
-  player.imgObj = stages[1].imgObj; // da40.jpeg
+  updatePlayerSize(currentStageIndex);
+  if (isBoeingLoaded) player.imgObj = boeingCanvas;
 
   particles = [];
   runway = null;
@@ -458,6 +489,7 @@ function update() {
       spawnExplosion(activeCoin.x, activeCoin.y, "#00e676");
 
       currentStageIndex++;
+      updatePlayerSize(currentStageIndex);
 
       // When Stage 4 is collected (making index 5), trigger the terrain transition
       if (currentStageIndex === 5) {
@@ -466,8 +498,6 @@ function update() {
       } else {
         // Check for player upgrade after Stage 5
         if (currentStageIndex === 6) {
-          // Index 5 is Stage 5 (da42)
-          player.imgObj = stages[5].imgObj; // da42
           spawnExplosion(player.x, player.y, "#D4AF37"); // Upgrade effect — ET gold
         }
         
@@ -561,8 +591,15 @@ function draw() {
 
   if (gameState === "PLAYING" || gameState === "GAMEOVER" || gameState === "LANDING_ROLL" || gameState === "LANDED") {
     // Draw Player
-    if (player.imgObj && player.imgObj.complete) {
+    if (player.imgObj) {
       ctx.save();
+      
+      // Dynamic 3D drop-shadow
+      ctx.shadowColor = "rgba(0,0,0,0.7)";
+      ctx.shadowBlur = player.width * 0.15;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = player.width * 0.1;
+      
       ctx.translate(player.x, player.y);
       ctx.drawImage(
         player.imgObj,
